@@ -1,9 +1,187 @@
+<!DOCTYPE html>
 <html>
 
+<head>
+    <title>Word Building App</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: auto;
+            text-align: center;
+        }
+
+        .prefix, .suffix {
+            display: inline-block;
+            padding: 0.5em;
+            margin: 0.3em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .selected {
+            background-color: lightblue;
+        }
+
+        .dropdown {
+            display: none;
+            padding: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-top: 0.5em;
+            text-align: left;
+            background-color: #f9f9f9;
+        }
+
+        .orange { color: orange; }
+        .turquoise { color: turquoise; }
+        .red { color: red; }
+        .green { color: green; }
+        .purple { color: purple; }
+        .blue { color: blue; }
+        .pink { color: pink; }
+    </style>
+</head>
+
 <body>
-  <h1>Moises</h1>
-  <p>Welcome to my website!</p>
-  <img src="https://content.codecademy.com/articles/github-pages-via-web-app/happy-ice-cream.gif" />
+    <div class="container">
+        <h1>Word Building App</h1>
+        <h2>Enter Base Word:</h2>
+        <input type="text" id="baseWord" placeholder="Enter a base word">
+
+        <button id="suggestButton">Suggest Prefixes/Suffixes</button>
+
+        <div id="suggestions">
+            <h3>Prefixes:</h3>
+            <div id="prefixes"></div>
+
+            <h3>Suffixes:</h3>
+            <div id="suffixes"></div>
+
+            <h3>New Word:</h3>
+            <div id="newWord"></div>
+        </div>
+    </div>
+
+    <script>
+        const baseWordInput = document.getElementById('baseWord');
+        const suggestButton = document.getElementById('suggestButton');
+        const prefixesDiv = document.getElementById('prefixes');
+        const suffixesDiv = document.getElementById('suffixes');
+        const newWordDiv = document.getElementById('newWord');
+
+        // Function to apply spelling rules for suffixes like "ed" and "ing"
+        function applySpellingRules(baseWord, suffix) {
+            if (suffix === "ing" || suffix === "ed") {
+                if (baseWord.endsWith("e")) {
+                    return baseWord.slice(0, -1) + suffix;
+                } else if (/[aeiou][bcdfghjklmnpqrstvwxyz]$/.test(baseWord)) {
+                    return baseWord + baseWord.slice(-1) + suffix;
+                }
+            }
+            return baseWord + suffix;
+        }
+
+        const prefixData = [
+            { prefix: "un", meaning: "Not", example: "Unhappy", usage: "Adjectives", spanishMeaning: "No", color: "green" },
+            { prefix: "re", meaning: "Again", example: "Rewrite", usage: "Verbs", spanishMeaning: "De nuevo", color: "green" },
+            { prefix: "pre", meaning: "Before", example: "Preview", usage: "Nouns, Verbs", spanishMeaning: "Antes", color: "blue" },
+            { prefix: "dis", meaning: "Opposite of", example: "Disagree", usage: "Verbs", spanishMeaning: "Opuesto a", color: "purple" },
+            { prefix: "mis", meaning: "Wrongly", example: "Misunderstand", usage: "Verbs", spanishMeaning: "Erróneamente", color: "red" },
+            { prefix: "non", meaning: "Not", example: "Nonexistent", usage: "Adjectives, Nouns", spanishMeaning: "No", color: "orange" },
+            { prefix: "over", meaning: "Excessive", example: "Overcook", usage: "Verbs", spanishMeaning: "Excesivo", color: "turquoise" },
+            { prefix: "under", meaning: "Insufficient", example: "Underestimate", usage: "Verbs", spanishMeaning: "Insuficiente", color: "pink" }
+        ];
+
+        const suffixData = [
+            { suffix: "able", meaning: "Capable of being", example: "Readable", usage: "Adjectives", spanishMeaning: "Capaz de ser", color: "orange" },
+            { suffix: "less", meaning: "Without", example: "Hopeless", usage: "Adjectives", spanishMeaning: "Sin", color: "red" },
+            { suffix: "ness", meaning: "State of being", example: "Happiness", usage: "Nouns", spanishMeaning: "Estado de ser", color: "turquoise" },
+            { suffix: "ful", meaning: "Full of", example: "Joyful", usage: "Adjectives", spanishMeaning: "Lleno de", color: "green" },
+            { suffix: "ly", meaning: "In the manner of", example: "Quickly", usage: "Adverbs", spanishMeaning: "De la manera de", color: "blue" },
+            { suffix: "er", meaning: "One who", example: "Teacher", usage: "verbs and short Adjectives", spanishMeaning: "si se usa con verbos El que si se usa con adjetivos mas", color: "pink" },
+            { suffix: "ment", meaning: "Action or process", example: "Development", usage: "Nouns", spanishMeaning: "Acción o proceso", color: "purple" },
+            { suffix: "tion", meaning: "State or quality", example: "Celebration", usage: "Nouns", spanishMeaning: "Estado o calidad", color: "turquoise" },
+            { suffix: "ed", meaning: "Past tense of regular verbs", example: "Worked", usage: "Verbs", spanishMeaning: "Pasado de verbos regulares", color: "green" }
+        ];
+
+        let selectedPrefix = "";
+        let selectedSuffix = "";
+
+        // Update the new word after selecting prefix and suffix
+        function updateNewWord() {
+            const baseWord = baseWordInput.value.trim();
+            if (!baseWord) return;
+
+            let modifiedBaseWord = baseWord;
+            if (selectedSuffix) {
+                modifiedBaseWord = applySpellingRules(baseWord, selectedSuffix);
+            }
+
+            let newWord = ${selectedPrefix}${modifiedBaseWord};
+            newWordDiv.textContent = New Word: ${newWord};
+        }
+
+        // Event listener to suggest prefixes and suffixes
+        suggestButton.addEventListener('click', () => {
+            prefixesDiv.innerHTML = "";
+            suffixesDiv.innerHTML = "";
+            newWordDiv.textContent = "";
+            selectedPrefix = "";
+            selectedSuffix = "";
+
+            // Create prefix elements
+            prefixData.forEach(item => {
+                const prefixElement = document.createElement('span');
+                prefixElement.classList.add('prefix', item.color);
+                prefixElement.textContent = item.prefix;
+                prefixElement.addEventListener('click', () => {
+                    document.querySelectorAll('.prefix').forEach(el => el.classList.remove('selected'));
+                    prefixElement.classList.add('selected');
+                    selectedPrefix = item.prefix;
+                    updateNewWord();
+                    showDropdown('prefix', item);
+                });
+                prefixesDiv.appendChild(prefixElement);
+            });
+
+            // Create suffix elements
+            suffixData.forEach(item => {
+                const suffixElement = document.createElement('span');
+                suffixElement.classList.add('suffix', item.color);
+                suffixElement.textContent = item.suffix;
+                suffixElement.addEventListener('click', () => {
+                    document.querySelectorAll('.suffix').forEach(el => el.classList.remove('selected'));
+                    suffixElement.classList.add('selected');
+                    selectedSuffix = item.suffix;
+                    updateNewWord();
+                    showDropdown('suffix', item);
+                });
+                suffixesDiv.appendChild(suffixElement);
+            });
+        });
+
+        // Show dropdown with explanation and Spanish meaning
+        function showDropdown(type, item) {
+            const dropdown = document.createElement('div');
+            dropdown.classList.add('dropdown');
+            dropdown.innerHTML = `
+                <strong>Meaning:</strong> ${item.meaning} <br>
+                <strong>Example:</strong> ${item.example} <br>
+                <strong>Usage:</strong> ${item.usage} <br>
+                <strong>Spanish Meaning:</strong> ${item.spanishMeaning}
+            `;
+            const existingDropdowns = document.querySelectorAll('.dropdown');
+            existingDropdowns.forEach(drop => drop.remove()); // Remove previous dropdowns
+            document.body.appendChild(dropdown);
+            dropdown.style.display = "block";
+        }
+    </script>
 </body>
 
 </html>
